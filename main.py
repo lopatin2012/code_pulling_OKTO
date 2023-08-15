@@ -2,21 +2,23 @@ import PySimpleGUI as sg  # pip install pysimplegui
 import datetime
 import time
 
+
 # Функции ,
 def create_to_code(file_okto, file_ready, gtin, date, time_start, time_end):
     lst = []
     date_time_start = datetime.datetime.strptime(time_start, "%H:%M:%S")
     date_time_end = datetime.datetime.strptime(time_end, "%H:%M:%S")
-    second_date_time_start = date_time_start.hour * 3600 + date_time_start.minute * 60 + date_time_start.second
+    second_date_time_start = date_time_start.hour * 3600 + date_time_start.minute * 60 + date_time_start.second - 1
     second_date_time_end = date_time_end.hour * 3600 + date_time_end.minute * 60 + date_time_end.second + 1
     str_date_start = time.strftime("%H-%M-%S", time.gmtime(second_date_time_start))
     str_date_end = time.strftime("%H-%M-%S", time.gmtime(second_date_time_end))
     lst_time = [str(time.strftime("%H:%M:%S", time.gmtime(i)))
+                if i >= 36000 else str(time.strftime("%H:%M:%S", time.gmtime(i)))[1:]
                 for i in range(second_date_time_start, second_date_time_end)]
     with open(file_okto, "r", encoding="UTF-8") as f_okto:
         for row in f_okto.readlines():
-            if gtin in row and date in row and row[11:19] in lst_time:
-                lst.append(row[20:])
+            if gtin in row and date == row.split()[0] and row.split()[1] in lst_time:
+                lst.append(row.split()[2] + "" + row.split()[3] + "\n")
     with open(f"{file_ready}/{gtin}_{len(lst)}_"
               f"{date}_"
               f"{str_date_start}_"
@@ -26,7 +28,8 @@ def create_to_code(file_okto, file_ready, gtin, date, time_start, time_end):
             f_ready.write(row)
     sg.popup_no_titlebar("Готово!")
 
-sg.theme('DarkAmber')   # Тема
+
+sg.theme('DarkAmber')  # Тема
 # Кнопки и прочее
 layout = [
     [sg.Text('Исходный файл:'), sg.Input(key="in"), sg.FileBrowse(file_types=(("Файл с кодами", "*.txt"),))],
@@ -39,11 +42,11 @@ layout = [
 ]
 
 # Создаём окно
-window = sg.Window('Window Title', layout)
+window = sg.Window('Вытягиватель кодов', layout)
 # обработка событий и получение значений
 while True:
     event, values = window.read()
-    if event == sg.WIN_CLOSED or event == 'Закрыть': # закрытие окна
+    if event == sg.WIN_CLOSED or event == 'Закрыть':  # закрытие окна
         break
     if event == "Преобразовать":
         print(values["in"])
